@@ -1,0 +1,46 @@
+version: v2beta1
+name: generic-config
+# namespace: dev
+
+# This is a list of `pipelines` that DevSpace can execute (you can define your own)
+pipelines:
+  # This is the pipeline for the main command: `devspace dev` (or `devspace run-pipeline dev`)
+  dev:
+    run: |-
+      run_dependencies --all       # 1. Deploy any projects this project needs (see "dependencies")
+      ensure_pull_secrets --all    # 2. Ensure pull secrets
+      create_deployments --all     # 3. Deploy Helm charts and manifests specfied as "deployments"
+      start_dev app                # 4. Start dev mode "app" (see "dev" section)
+
+# This is a list of `dev` containers that are based on the containers created by your deployments
+dev:
+  app:
+    labelSelector:
+      service: backend
+    sync:
+      - path: ./src:src
+        disableUpload: true
+      - path: ./devspace_start.sh
+        file: true
+    terminal:
+      command: ./devspace_start.sh
+    ssh:
+      enabled: false
+    proxyCommands:
+      - command: devspace
+      - command: kubectl
+      - command: helm
+      - gitCredentials: true
+    ports:
+      - port: "9229"
+
+# Use the `commands` section to define repeatable dev workflows for this project
+commands:
+  test:
+# Define dependencies to other projects with a devspace.yaml
+# dependencies:
+#   api:
+#     git: https://...  # Git-based dependencies
+#     tag: v1.0.0
+#   ui:
+#     path: ./ui        # Path-based dependencies (for monorepos)
