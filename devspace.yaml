@@ -8,18 +8,69 @@ pipelines:
       ensure_pull_secrets --all    # 2. Ensure pull secrets
       create_deployments --all     # 3. Deploy Helm charts and manifests specfied as "deployments"
       start_dev app                # 4. Start dev mode "app" (see "dev" section)
+  debug:
+    flags:
+      - name: service
+        description: The value of the service selector label of the deployment in Kubernetes
+        type: string
+
+    run: |-
+      service=$(get_flag service)
+      if ! is_empty $service; then
+        start_dev app \
+          --from base \
+          --set app:labelSelector.service=$service
+      else
+        echo "service flag must be set"
+        exit 1
+      fi
 
 dev:
+  base:
+    labelSelector:
+      service: base
   app:
     labelSelector:
       service: ${SERVICE}
     sync:
       - path: ./src:src
         disableUpload: true
-      - path: ./devspace_start.sh
-        file: true
+      # - path: ./devspace_start.sh
+      #   file: true
     terminal:
-      command: ./devspace_start.sh
+      command: |-
+        bash -c '
+        set -e # Stop on errors
+        trap 'exit 1' INT
+
+        rewrite-dir-content() {
+            temp_dir=$(mktemp -d)
+            cp -r $1/* $temp_dir
+            cp -r $temp_dir/* $1
+            rm -r $temp_dir
+        }
+
+        COLOR_BLUE="\033[0;94m"
+        COLOR_RESET="\033[0m"
+
+        # Print useful output for user
+        echo -e "${COLOR_BLUE}Welcome to your development container!${COLOR_RESET}"
+
+        # Include project's bin/ folder in PATH
+        export PATH="./bin:$PATH"
+
+        echo -e "${COLOR_BLUE}Rewriting src folder contet...${COLOR_RESET}"
+        rewrite-dir-content src
+
+        temp_dir=$(mktemp -d)
+        cp -r src/* $temp_dir
+        cp -r $temp_dir/* src
+        rm -r $temp_dir
+
+        echo -e "${COLOR_BlUE}Starting the application...${COLOR_RESET}"
+        node --inspect-brk=9229 dist/index.js
+        '
+
     ssh:
       enabled: false
     proxyCommands:
