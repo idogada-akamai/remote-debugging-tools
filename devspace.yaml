@@ -11,8 +11,7 @@ pipelines:
 
 dev:
   app:
-    labelSelector:
-      service: backend
+    labelSelector: ${SELECTORS}
     sync:
       - path: ./src:src
         disableUpload: true
