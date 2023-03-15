@@ -6,19 +6,27 @@ set -e
 
 echoerr() { echo "$@" 1>&2; }
 
-choose_context_interactive() {
-    local choice
-    choice="$(
-        _KUBECTX_FORCE_COLOR=1 \
-            FZF_DEFAULT_COMMAND="kubectl config get-contexts -o=name | sort -n | grep -i stg" \
-            fzf --ansi --no-preview || true
-    )"
-    if [[ -z "${choice}" ]]; then
-        echoerr "error: you did not choose any of the options"
+select_interactive() {
+    question=$1
+    var=$2
+    options="${@:3}"
+
+    image=inquirer:0.1
+    tmpfile=$(mktemp)
+
+    docker run --rm -it -v $tmpfile:/app/selection.txt $image -q "$question" -o $options
+    choice=$(cat $tmpfile)
+
+    if [[ -z $choice ]]; then
+        echoerr "No choice has been selected"
         exit 1
-    else
-        echo "$choice"
     fi
+
+    # Cleanup
+    rm $tmpfile
+
+    # Set variable value
+    printf -v "$var" "%s" "$choice"
 }
 
 get_repo_name() {
@@ -64,15 +72,32 @@ start_debugging_session() {
     deployment=$3
 }
 
-namespace="app"
-selector_label="service"
+NAMESPACE="app"
+SELECTOR_LABEL="service"
 
-context=$(choose_context_interactive)
-repo=$(get_repo_name)
-deployment=$(get_repo_deployment $context $namespace $repo)
-echo "Deployment $deployment is matching your repo"
+# Get the cluster name
+select_interactive \
+    "Please select the cluster to debug" \
+    "CONTEXT" \
+    $(kubectl config get-contexts -o=name | sort -n | grep -i dev)
 
-selector=$(get_deployment_label_selector $context $namespace $deployment $selector_label)
-echo "You deployment selector is: $selector"
+REPO=$(get_repo_name)
 
-devspace print --var SERVICE=$selector
+DEPLOYMENT=$(get_repo_deployment $CONTEXT $NAMESPACE $REPO)
+if [[ $DEPLOYMENT =~ " " ]]; then
+    echo "More than 1 matching deployment for your repo have been found."
+    select_interactive \
+        "Please select the one you wish to dubug" \
+        "DEPLOYMENT" \
+        $DEPLOYMENT
+fi
+
+echo "Deployment $DEPLOYMENT is matching your repo"
+
+SELECTOR=$(get_deployment_label_selector $CONTEXT $NAMESPACE $DEPLOYMENT $SELECTOR_LABEL)
+echo "You deployment selector is: $SELECTOR"
+
+echo "Starting dev container, use the following to resume your deployment to working order after you are done"
+echo "devspace --kube-context $CONTEXT --namespace $NAMESPACE reset pods"
+
+devspace --kube-context $CONTEXT --namespace $NAMESPACE run-pipeline debug --service $SELECTOR
