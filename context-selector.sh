@@ -11,7 +11,7 @@ select_interactive() {
     var=$2
     options="${@:3}"
 
-    image=inquirer:0.1
+    image=idogakamai/remote-debugging-tools:0.1
     tmpfile=$(mktemp)
 
     docker run --rm -it -v $tmpfile:/app/selection.txt $image -q "$question" -o $options
