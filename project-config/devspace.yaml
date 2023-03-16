@@ -1,0 +1,6 @@
+version: v2beta1
+imports:
+  - path: git@github.com:igadaaka/remote-debugging-tools.git
+    branch: main
+
+name: generic-config
