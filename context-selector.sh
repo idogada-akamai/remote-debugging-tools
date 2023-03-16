@@ -97,7 +97,8 @@ echo "Deployment $DEPLOYMENT is matching your repo"
 SELECTOR=$(get_deployment_label_selector $CONTEXT $NAMESPACE $DEPLOYMENT $SELECTOR_LABEL)
 echo "You deployment selector is: $SELECTOR"
 
-echo "Starting dev container, use the following to resume your deployment to working order after you are done"
-echo "devspace --kube-context $CONTEXT --namespace $NAMESPACE reset pods"
+echo "Starting dev container, run reset-pods.sh in your current directory to resume the deployment."
+echo "devspace --kube-context $CONTEXT --namespace $NAMESPACE reset pods" >reset-pods.sh
+chmod +x reset-pods.sh
 
 devspace --kube-context $CONTEXT --namespace $NAMESPACE run-pipeline debug --service $SELECTOR
