@@ -35,20 +35,11 @@ dev:
     sync:
       - path: ./src:src
         disableUpload: true
-      # - path: ./devspace_start.sh
-      #   file: true
     terminal:
       command: |-
         bash -c '
         set -e # Stop on errors
         trap 'exit 1' INT
-
-        rewrite-dir-content() {
-            temp_dir=$(mktemp -d)
-            cp -r $1/* $temp_dir
-            cp -r $temp_dir/* $1
-            rm -r $temp_dir
-        }
 
         COLOR_BLUE="\033[0;94m"
         COLOR_RESET="\033[0m"
@@ -60,8 +51,6 @@ dev:
         export PATH="./bin:$PATH"
 
         echo -e "${COLOR_BLUE}Rewriting src folder contet...${COLOR_RESET}"
-        rewrite-dir-content src
-
         temp_dir=$(mktemp -d)
         cp -r src/* $temp_dir
         cp -r $temp_dir/* src
