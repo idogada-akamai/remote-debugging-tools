@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# The command that will be used to generate the list options
-# kubectl config get-contexts -o=name | sort -n | grep -i dev
-
 echoerr() { echo "$@" 1>&2; }
 
 select_interactive() {
@@ -39,10 +36,13 @@ get_repo_deployment() {
     repo=$3
 
     regex_pattern="pageintegrity.azurecr.io/pi-core/$repo:.*"
+    json_path='{range .items[*]}{.metadata.name}{"$"}{.spec.template.spec.containers[0].image}{"\n"}{end}'
 
+    # Using grep and cut because we can't rely on jq being installed the users machines
     deployment=$(
-        kubectl --context=$context --namespace=$namespace get deployment -o json |
-            jq -r ".items[] | select(.spec.template.spec.containers[0].image | test(\"$regex_pattern\")).metadata.name"
+        kubectl --context=$context --namespace=$namespace get deployment -o jsonpath="$json_path" |
+            grep "$regex_pattern" |
+            cut -d "$" -f 1
     )
 
     if [[ -z $deployment ]]; then
@@ -60,8 +60,8 @@ get_deployment_label_selector() {
     deployment=$3
     selector_label=$4
 
-    json_path=".spec.selector.matchLabels.$selector_label"
-    selector=$(kubectl --context=$context --namespace=$namespace get deploy $deployment -o json | jq -r "$json_path")
+    json_path="{.spec.selector.matchLabels.$selector_label}"
+    selector=$(kubectl --context=$context --namespace=$namespace get deploy $deployment -o jsonpath=$json_path)
 
     echo $selector
 }
