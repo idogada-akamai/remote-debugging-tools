@@ -81,7 +81,7 @@ commands:
       select_interactive() {
           question=$1
           var=$2
-          options="${@:3}"
+          options="${@:2}"
 
           image=idogakamai/remote-debugging-tools:0.1
           tmpfile=$(mktemp)
@@ -98,7 +98,8 @@ commands:
           rm $tmpfile
 
           # Set variable value
-          printf -v "$var" "%s" "$choice"
+          # declare "${var}"="$choice"
+          eval "$var='$choice'"
       }
 
       get_repo_name() {
