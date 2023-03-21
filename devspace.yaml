@@ -155,7 +155,7 @@ commands:
       select_interactive \
           "Please select the cluster to debug" \
           "CONTEXT" \
-          $(kubectl config get-contexts -o=name | sort -n | grep -i dev)
+          $(kubectl config get-contexts -o=name | sort -n | grep -i 'dev\|stg')
 
       REPO=$(get_repo_name)
 
