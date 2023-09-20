@@ -57,7 +57,7 @@ dev:
         rm -r $temp_dir
 
         echo -e "${COLOR_BlUE}Starting the application...${COLOR_RESET}"
-        node --inspect-brk=9229 dist/index.js
+        node --inspect-brk=9229 ./dist/scripts/copyCollectionToMaster.js
         '
 
     ssh:
