@@ -86,7 +86,7 @@ commands:
           image=idogakamai/remote-debugging-tools:0.1
           tmpfile=$(mktemp)
 
-          docker run --rm -it -v $tmpfile:/app/selection.txt $image -q "$question" -o $options
+          docker run --platform linux/amd64 --rm -it -v $tmpfile:/app/selection.txt $image -q "$question" -o $options
           choice=$(cat $tmpfile)
 
           if [[ -z $choice ]]; then
