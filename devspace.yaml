@@ -13,13 +13,21 @@ pipelines:
       - name: service
         description: The value of the service selector label of the deployment in Kubernetes
         type: string
+      - name: entrypoint
+        description: The entrypoint to run in the container
+        type: string
 
     run: |-
       service=$(get_flag service)
+      entrypoint=$(get_flag entrypoint)
+      entrypoint=${entrypoint:-node --inspect-brk=9229 dist/index.js}
+
       if ! is_empty $service; then
         start_dev app \
           --from base \
-          --set app:labelSelector.service=$service
+          --set app:labelSelector.service=$service \
+          --set app:env[0].name=ENTRYPOINT \
+          --set app:env[0].value="$entrypoint"
       else
         echo "service flag must be set"
         exit 1
@@ -57,7 +65,7 @@ dev:
         rm -r $temp_dir
 
         echo -e "${COLOR_BlUE}Starting the application...${COLOR_RESET}"
-        node --inspect-brk=9229 dist/index.js
+        eval $ENTRYPOINT
         '
 
     ssh:
@@ -177,5 +185,5 @@ commands:
       echo "devspace --kube-context $CONTEXT --namespace $NAMESPACE reset pods" >reset-pods.sh
       chmod +x reset-pods.sh
 
-      devspace --kube-context $CONTEXT --namespace $NAMESPACE run-pipeline debug --service $SELECTOR
+      devspace --kube-context $CONTEXT --namespace $NAMESPACE run-pipeline debug --service $SELECTOR $@
     description: Launch debugging wizard and start debugging session
