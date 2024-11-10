@@ -20,7 +20,7 @@ pipelines:
     run: |-
       service=$(get_flag service)
       entrypoint=$(get_flag entrypoint)
-      entrypoint=${entrypoint:-node --inspect-brk=9229 dist/index.js}
+      entrypoint=${entrypoint:-dist/index.js}
 
       if ! is_empty $service; then
         start_dev app \
@@ -65,7 +65,7 @@ dev:
         rm -r $temp_dir
 
         echo -e "${COLOR_BlUE}Starting the application...${COLOR_RESET}"
-        eval $ENTRYPOINT
+        node --inspect-brk=9229 $ENTRYPOINT
         '
 
     ssh:
